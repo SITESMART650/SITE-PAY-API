@@ -55,11 +55,13 @@ mongoose.connect(uri, options).then(
 var transaccion = mongoose.model('transaccion', {
     token: String,
     id: Number,
+    balance: Number,
+    history:[{
     address: String,
     value: Number,
     usd: Number,
     pay: Boolean,
-    payAt: Number
+    payAt: Number}]
 
 });
 
@@ -162,9 +164,19 @@ app.get('/consultar/id/:id', async(req,res) => {
     let id = req.params.id;
     id = parseInt(id);
 
-    usuario = await transaccion.find({ id: id }, {"privateKey":0,"_id":0,"__v":0} );
+    usuario = await transaccion.find({ id: id }, {"_id":0,"__v":0} );
 
     res.status(200).send(usuario);
+
+});
+
+app.get('/consultar/todos', async(req,res) => {
+
+
+
+  usuario = await transaccion.find({}, {"_id":0,"__v":0} );
+
+  res.status(200).send(usuario);
 
 });
 
@@ -203,7 +215,7 @@ app.post('/consultar/transacciones', async(req,res) => {
 
 });
 
-app.post('/generar/wallet', async(req,res) => {
+app.post('/generar/id', async(req,res) => {
 
     let token2 = req.body.token;
     let usd = req.body.usd;
