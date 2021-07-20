@@ -52,16 +52,26 @@ mongoose.connect(uri, options).then(
   err => { console.log(err); }
 );
 
-var transaccion = mongoose.model('transaccion', {
+var transaccion = mongoose.model('sitio1', {
     token: String,
     id: Number,
     balance: Number,
-    history:[{
-    address: String,
-    value: Number,
-    usd: Number,
-    pay: Boolean,
-    payAt: Number}]
+    deposit:[{
+      address: String,
+      value: Number,
+      usd: Number,
+      pay: Boolean,
+      payAt: Number,
+      txID: String
+    }],
+    withdrawal:[{
+      address: String,
+      value: Number,
+      usd: Number,
+      pay: Boolean,
+      payAt: Number,
+      txID: String
+    }]
 
 });
 
@@ -172,9 +182,7 @@ app.get('/consultar/id/:id', async(req,res) => {
 
 app.get('/consultar/todos', async(req,res) => {
 
-
-
-  usuario = await transaccion.find({}, {"_id":0,"__v":0} );
+  usuario = await transaccion.find({}, {"_id":0,"__v":0,"deposit":0,"withdrawal":0} );
 
   res.status(200).send(usuario);
 
@@ -215,42 +223,32 @@ app.post('/consultar/transacciones', async(req,res) => {
 
 });
 
-app.post('/generar/id', async(req,res) => {
+app.post('/registrar/id', async(req,res) => {
 
     let token2 = req.body.token;
-    let usd = req.body.usd;
+    let id = req.body.id;
+    let wallet = req.body.wallet;
     let respuesta = {};
 
     if ( token == token2 ) {
-
-      let cuenta = await tronWeb.createAccount();
-
-        usuario = await transaccion.find({ token: "SITE" }, function (err, docs) {});
         
         respuesta.network = network;
         respuesta.data = {
-            id: usuario.length,
-            timeStart: Date.now(),
-            address: cuenta.address.base58
+            id: id,
+            wallet: wallet
           };
-
-        var sitePrice = 0.02; //await precioToken();
 
         var transaccions = new transaccion({
             token: "SITE",
-            id: usuario.length,
-            timeStart: Date.now(),
-            address: cuenta.address.base58,
-            privateKey: cuenta.privateKey,
-            value: parseFloat(usd)/sitePrice,
-            usd: parseFloat(usd),
-            priceSite: sitePrice,
-            pay: false,
-            payAt: 0
+            id: id,
+            balance: 0,
+            deposit:[],
+            withdrawal:[]
 
         });
 
         transaccions.save().then(() => {
+            respuesta.ok = true;
             respuesta.txt = "transacción creada exitodamente";
 
             res.status(200).send(respuesta);
@@ -264,28 +262,19 @@ app.post('/generar/id', async(req,res) => {
 
 });
 
-app.post('/trasferir/owner', async(req,res) => {
+app.post('/pagar', async(req,res) => {
 
     let token2 = req.body.token;
-    let privateKey = req.body.privateKey;
+    let usd = req.body.usd;
     let respuesta = {};
-
-    let tronCuenta = new TronWeb(
-      TRONGRID_API,
-      TRONGRID_API,
-      TRONGRID_API,
-      privateKey
-    );
 
     let saldo = await tronCuenta.trx.getBalance();
 
     if ( token == token2 && saldo > 0 ) {
 
+      const contractTRC20 = await tronWeb.contract().at(tokenTRC20);
 
-        let id = await tronCuenta.trx.sendTransaction(owner, saldo);
-
-        id = id.transaction.txID;
-
+      var id = await contractTRC20.transfer(cuenta).send();
 
         respuesta.status = "200";
         respuesta.network = network;
