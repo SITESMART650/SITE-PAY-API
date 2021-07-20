@@ -9,14 +9,15 @@ const app = express();
 const port = process.env.PORT || 3003;
 
 const token = process.env.APP_MT;
-const uri = process.env.APP_URI || "mongodb+srv://dbTronPay:sffN0hkxIIjyQ3Gw@cluster0.ztc71.mongodb.net/registro";
+const uri = process.env.APP_URI;
 
-const owner = process.env.APP_OWNER || "TB7RTxBPY4eMvKjceXj8SWjVnZCrWr4XvF";
+const owner = process.env.APP_OWNER;
+const prykey = process.env.APP_PRYKEY;
 
-const tokenTRC20 = process.env.APP_TRC20 || "TDDkSxfkN5DbqXK3tHSZFXRMcT9aS6m9qz";
-const pool = process.env.APP_POOL || "TMSRvNWKUTvMBaTPFGStWVNtRUQJD72skU";
+const tokenTRC20 = process.env.APP_TRC20;
+const pool = process.env.APP_POOL;
 
-const TRONGRID_API = process.env.APP_API || "https://api.trongrid.io";
+const TRONGRID_API = process.env.APP_API;
 
 let network;
 
@@ -35,10 +36,9 @@ if (TRONGRID_API == "https://api.trongrid.io") {
 tronWeb = new TronWeb(
   TRONGRID_API,
   TRONGRID_API,
-  TRONGRID_API
+  TRONGRID_API,
+  prykey
 );
-
-tronWeb.setAddress('TEf72oNbP7AxDHgmb2iFrxE2t1NJaLjTv5');
 
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -55,9 +55,7 @@ mongoose.connect(uri, options).then(
 var transaccion = mongoose.model('transaccion', {
     token: String,
     id: Number,
-    timeStart: Number,
     address: String,
-    privateKey: String,
     value: Number,
     usd: Number,
     pay: Boolean,
@@ -69,6 +67,8 @@ var transaccion = mongoose.model('transaccion', {
 async function precioToken() {
 
     var trxPrice = await precioTRX();
+
+    const contractTRC20 = await tronWeb.contract().at(tokenTRC20);
 
     var balanceTRC20 = await contractTRC20.balanceOf(pool).call();
 
@@ -104,7 +104,6 @@ app.get('/precio', async(req,res) => {
 
     var response = {
         "ok": true,
-        "message": "",
         "data": {
             "price": Price
         }
